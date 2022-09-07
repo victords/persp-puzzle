@@ -13,6 +13,7 @@ class Window < GameWindow
   end
 
   def update
+    close if KB.key_pressed?(Gosu::KB_ESCAPE)
     Game.update
   end
 
