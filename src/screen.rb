@@ -4,6 +4,8 @@ include MiniGL
 
 class Screen
   def initialize
+    @bg = Res.img(:bg_1)
+
     @tileset = Res.tileset('1', 20, 20)
     @tiles_f = Array.new(32) { Array.new(18) }
     @tiles_t = Array.new(32) { Array.new(18) }
@@ -48,22 +50,50 @@ class Screen
     end
 
     @front = true
+    @y_scale = 1
+  end
+
+  def toggle_view
+    @angle = 0
+    @toggling = 1
   end
 
   def update
-    @front = !@front if KB.key_pressed?(Gosu::KB_SPACE)
+    if @toggling
+      @angle += Math::PI / 60
+      if @angle >= Math::PI / 2
+        if @toggling == 1
+          @front = !@front
+          @toggling = 2
+          @angle = 0
+        else
+          @toggling = nil
+          @y_scale = 1
+        end
+      else
+        @y_scale = Math.cos(@toggling == 1 ? @angle : Math::PI / 2 - @angle)
+      end
+
+      return
+    end
+
+    toggle_view if KB.key_pressed?(Gosu::KB_SPACE)
   end
 
   def draw
+    offset_y = (SCREEN_HEIGHT * (1 - @y_scale)) / 2
+
+    @bg.draw(0, offset_y, 0, 1, @y_scale)
+
     (0...TILE_X_COUNT).each do |i|
       (0...TILE_Y_COUNT).each do |j|
         if @front
-          @tileset[@tiles_f[i][j]].draw(i * TILE_SIZE, j * TILE_SIZE, 0) if @tiles_f[i][j]
+          @tileset[@tiles_f[i][j]].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @y_scale, 0, 1, @y_scale) if @tiles_f[i][j]
         else
           @tiles_t[i][j]&.each do |tile_info|
             dim = 255 - (MAX_DIM_TINT * (@max_depth - tile_info[1]).to_f / @max_depth).round
             color = 0xff000000 | (dim << 16) | (dim << 8) | dim
-            @tileset[TOP_TILE_OFFSET + tile_info[0]].draw(i * TILE_SIZE, j * TILE_SIZE, 0, 1, 1, color)
+            @tileset[TOP_TILE_OFFSET + tile_info[0]].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @y_scale, 0, 1, @y_scale, color)
           end
         end
       end

@@ -6,7 +6,7 @@ include MiniGL
 
 class Window < GameWindow
   def initialize
-    super(SCREEN_WIDTH, SCREEN_HEIGHT, false)
+    super(SCREEN_WIDTH, SCREEN_HEIGHT, true)
     Res.prefix = File.expand_path(__FILE__).split('/')[..-3].join('/') + '/data'
     Res.retro_images = true
     Game.init
@@ -18,7 +18,6 @@ class Window < GameWindow
   end
 
   def draw
-    clear(0xffffff)
     Game.draw
   end
 end
