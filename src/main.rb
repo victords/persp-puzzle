@@ -1,15 +1,24 @@
 require 'minigl'
+require_relative 'constants'
+require_relative 'game'
 
 include MiniGL
 
 class Window < GameWindow
   def initialize
-    super(800, 600, false)
+    super(SCREEN_WIDTH, SCREEN_HEIGHT, false)
+    Res.prefix = File.expand_path(__FILE__).split('/')[..-3].join('/') + '/data'
+    Res.retro_images = true
+    Game.init
+  end
+
+  def update
+    Game.update
   end
 
   def draw
     clear(0xffffff)
-
+    Game.draw
   end
 end
 
