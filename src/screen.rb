@@ -81,6 +81,7 @@ class Screen
           @front = !@front
           @toggling = 2
           @angle = 0
+          @man.toggle_view
         else
           @toggling = nil
           @scale_y = 1

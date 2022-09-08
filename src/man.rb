@@ -6,16 +6,37 @@ class Man < GameObject
   MOVE_FORCE = 0.3
   FRICTION = 0.1
   JUMP_FORCE = 8
-  WIDTH = 16
+  WIDTH = 12
   HEIGHT = 35
+  MAX_SPEED_F = 3
+  MAX_SPEED_T = 2
+  MAX_SPEED_T_DIAG = MAX_SPEED_T * 0.5 * Math.sqrt(2)
 
   def initialize(x, y, z)
-    super(x, y, WIDTH, HEIGHT, :sprite_man, Vector.new(-2, -5), 3, 2)
-    @max_speed = Vector.new(3, 12)
+    super(x, y, WIDTH, HEIGHT, :sprite_man, Vector.new(-1, -5), 3, 3)
+    @max_speed = Vector.new(MAX_SPEED_F, 12)
 
-    @z = 0
+    @z = z
     @front = true
+    @angle = nil
     @facing_right = true
+  end
+
+  def toggle_view
+    @front = !@front
+    if @front
+      @h = HEIGHT
+      @y = @front_y
+      @angle = nil
+      @img_gap.y = -5
+      set_animation(0)
+    else
+      @h = WIDTH
+      @y = @z
+      @angle = @facing_right ? 0 : 180
+      @img_gap.y = -14
+      set_animation(6)
+    end
   end
 
   def update(screen)
@@ -57,10 +78,47 @@ class Man < GameObject
       elsif !@facing_right && @speed.x > 0
         @facing_right = true
       end
+
+      @front_y = @y
+    else
+      up = KB.key_down?(Gosu::KB_UP)
+      dn = KB.key_down?(Gosu::KB_DOWN)
+      lf = KB.key_down?(Gosu::KB_LEFT)
+      rt = KB.key_down?(Gosu::KB_RIGHT)
+
+      forces, @angle =
+        if up && !dn && !lf && !rt
+          [Vector.new(0, -MAX_SPEED_T), -90]
+        elsif dn && !up && !lf && !rt
+          [Vector.new(0, MAX_SPEED_T), 90]
+        elsif lf && !up && !dn && !rt
+          [Vector.new(-MAX_SPEED_T, 0), 180]
+        elsif rt && !up && !dn && !lf
+          [Vector.new(MAX_SPEED_T, 0), 0]
+        elsif up && lf && !dn && !rt
+          [Vector.new(-MAX_SPEED_T_DIAG, -MAX_SPEED_T_DIAG), -135]
+        elsif up && rt && !dn && !lf
+          [Vector.new(MAX_SPEED_T_DIAG, -MAX_SPEED_T_DIAG), -45]
+        elsif dn && lf && !up && !rt
+          [Vector.new(-MAX_SPEED_T_DIAG, MAX_SPEED_T_DIAG), 135]
+        elsif dn && rt && !up && !lf
+          [Vector.new(MAX_SPEED_T_DIAG, MAX_SPEED_T_DIAG), 45]
+        else
+          [Vector.new, @angle]
+        end
+
+      move(forces, screen.obstacles, [], true)
+      if @speed.x == 0 && @speed.y == 0
+        set_animation(6)
+      else
+        animate([6, 7, 6, 8], 7)
+      end
+
+      @z = @y
     end
   end
 
   def draw(scale_y)
-    super(nil, 1, scale_y, 255, 0xffffff, nil, @facing_right ? nil : :horiz)
+    super(nil, 1, scale_y, 255, 0xffffff, @angle, !@front || @facing_right ? nil : :horiz)
   end
 end
