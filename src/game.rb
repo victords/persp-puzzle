@@ -1,8 +1,12 @@
 require_relative 'screen'
 
+include MiniGL
+
 class Game
   class << self
     def init
+      G.gravity = Vector.new(0, 0.5)
+
       @controller = Screen.new
     end
 
