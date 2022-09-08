@@ -45,7 +45,12 @@ class Man < GameObject
     end
   end
 
-  def end_toggle
+  def end_toggle(screen)
+    if (obst = screen.obstacles.find { |o| o.bounds.intersect?(bounds) })
+      screen.toggle_view_blocked(obst)
+      return
+    end
+
     @y = @phys_y
     @toggling = false
   end

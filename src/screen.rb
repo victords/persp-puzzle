@@ -4,6 +4,9 @@ require_relative 'man'
 include MiniGL
 
 class Screen
+  BLOCKER_T1 = 10
+  BLOCKER_T2 = 50
+
   def initialize
     @bg = Res.img(:bg_1)
 
@@ -70,6 +73,11 @@ class Screen
     @man.start_toggle
   end
 
+  def toggle_view_blocked(obstacle)
+    @blocker = obstacle
+    @timer = 0
+  end
+
   def obstacles
     @front ? @obstacles_f : @obstacles_t
   end
@@ -86,10 +94,18 @@ class Screen
         else
           @toggling = nil
           @scale_y = 1
-          @man.end_toggle
+          @man.end_toggle(self)
         end
       else
         @scale_y = Math.cos(@toggling == 1 ? @angle : Math::PI / 2 - @angle)
+      end
+
+      return
+    elsif @blocker
+      @timer += 1
+      if @timer >= BLOCKER_T1 + BLOCKER_T2
+        @blocker = nil
+        toggle_view
       end
 
       return
@@ -120,6 +136,12 @@ class Screen
     end
 
     @man.draw(offset_y, @scale_y)
+
+    if @blocker
+      a = @timer >= BLOCKER_T1 ? 1 - ((@timer - BLOCKER_T1).to_f / BLOCKER_T2) : @timer.to_f / BLOCKER_T1
+      alpha = (204 * a).round
+      G.window.draw_rect(@blocker.x, @blocker.y, @blocker.w, @blocker.h, (alpha << 24) | 0xff0000, 0)
+    end
   end
 
   private
