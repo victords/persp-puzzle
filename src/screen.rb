@@ -1,4 +1,5 @@
 require_relative 'constants'
+require_relative 'man'
 
 include MiniGL
 
@@ -9,8 +10,10 @@ class Screen
     @tileset = Res.tileset('1', 20, 20)
     @tiles_f = Array.new(32) { Array.new(18) }
     @tiles_t = Array.new(32) { Array.new(18) }
+    @obstacles_f = []
+    @obstacles_t = []
     File.open("#{Res.prefix}screen/1.txt") do |f|
-      front, top = f.read.split('|').map { |s| s.split(';') }
+      front, front_obs, top, top_obs = f.read.split('|', -1).map { |s| s.split(';') }
 
       i = 0; j = 0
       front.each do |d|
@@ -27,6 +30,9 @@ class Screen
         else
           i, j = set_tile(@tiles_f, d.to_i, i, j)
         end
+      end
+      front_obs.each do |obs|
+        @obstacles_f << Block.new(*obs.split(',').map { |s| s.to_i * TILE_SIZE })
       end
 
       i = 0; j = 0
@@ -47,15 +53,24 @@ class Screen
           i, j = set_tile(@tiles_t, tiles, i, j)
         end
       end
+      top_obs.each do |obs|
+        @obstacles_t << Block.new(*obs.split(',').map { |s| s.to_i * TILE_SIZE })
+      end
     end
 
     @front = true
-    @y_scale = 1
+    @scale_y = 1
+
+    @man = Man.new(0, 0, 0)
   end
 
   def toggle_view
     @angle = 0
     @toggling = 1
+  end
+
+  def obstacles
+    @front ? @obstacles_f : @obstacles_t
   end
 
   def update
@@ -68,36 +83,40 @@ class Screen
           @angle = 0
         else
           @toggling = nil
-          @y_scale = 1
+          @scale_y = 1
         end
       else
-        @y_scale = Math.cos(@toggling == 1 ? @angle : Math::PI / 2 - @angle)
+        @scale_y = Math.cos(@toggling == 1 ? @angle : Math::PI / 2 - @angle)
       end
 
       return
     end
 
+    @man.update(self)
+
     toggle_view if KB.key_pressed?(Gosu::KB_SPACE)
   end
 
   def draw
-    offset_y = (SCREEN_HEIGHT * (1 - @y_scale)) / 2
+    offset_y = (SCREEN_HEIGHT * (1 - @scale_y)) / 2
 
-    @bg.draw(0, offset_y, 0, 1, @y_scale)
+    @bg.draw(0, offset_y, 0, 1, @scale_y)
 
     (0...TILE_X_COUNT).each do |i|
       (0...TILE_Y_COUNT).each do |j|
         if @front
-          @tileset[@tiles_f[i][j]].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @y_scale, 0, 1, @y_scale) if @tiles_f[i][j]
+          @tileset[@tiles_f[i][j]].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @scale_y, 0, 1, @scale_y) if @tiles_f[i][j]
         else
           @tiles_t[i][j]&.each do |tile_info|
             dim = 255 - (MAX_DIM_TINT * (@max_depth - tile_info[1]).to_f / @max_depth).round
             color = 0xff000000 | (dim << 16) | (dim << 8) | dim
-            @tileset[TOP_TILE_OFFSET + tile_info[0]].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @y_scale, 0, 1, @y_scale, color)
+            @tileset[TOP_TILE_OFFSET + tile_info[0]].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @scale_y, 0, 1, @scale_y, color)
           end
         end
       end
     end
+
+    @man.draw(@scale_y)
   end
 
   private
