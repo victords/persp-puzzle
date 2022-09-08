@@ -67,6 +67,7 @@ class Screen
   def toggle_view
     @angle = 0
     @toggling = 1
+    @man.start_toggle
   end
 
   def obstacles
@@ -85,6 +86,7 @@ class Screen
         else
           @toggling = nil
           @scale_y = 1
+          @man.end_toggle
         end
       else
         @scale_y = Math.cos(@toggling == 1 ? @angle : Math::PI / 2 - @angle)
@@ -117,7 +119,7 @@ class Screen
       end
     end
 
-    @man.draw(@scale_y)
+    @man.draw(offset_y, @scale_y)
   end
 
   private

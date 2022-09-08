@@ -22,24 +22,37 @@ class Man < GameObject
     @facing_right = true
   end
 
+  def start_toggle
+    @angle = nil unless @front
+    @phys_y = @y
+    @toggling = true
+  end
+
   def toggle_view
     @front = !@front
     if @front
       @h = HEIGHT
-      @y = @front_y
+      @phys_y = @front_y
       @angle = nil
       @img_gap.y = -5
       set_animation(0)
     else
       @h = WIDTH
-      @y = @z
+      @phys_y = @z
       @angle = @facing_right ? 0 : 180
       @img_gap.y = -14
       set_animation(6)
     end
   end
 
+  def end_toggle
+    @y = @phys_y
+    @toggling = false
+  end
+
   def update(screen)
+    return if @toggling
+
     if @front
       forces = Vector.new
       if KB.key_down?(Gosu::KB_RIGHT)
@@ -118,7 +131,8 @@ class Man < GameObject
     end
   end
 
-  def draw(scale_y)
+  def draw(offset_y, scale_y)
+    @y = offset_y + scale_y * @phys_y if @toggling
     super(nil, 1, scale_y, 255, 0xffffff, @angle, !@front || @facing_right ? nil : :horiz)
   end
 end
