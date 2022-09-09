@@ -18,7 +18,7 @@ class Game
                                     12, 9, 12, 12, 12,
                                     12, 9, 12, 12, 15],
                                    18, 9)
-      @controller = Screen.new
+      @controller = Screen.new('1')
     end
 
     def update

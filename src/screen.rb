@@ -16,7 +16,7 @@ class Screen
   BLOCKER_T1 = 10
   BLOCKER_T2 = 50
 
-  def initialize
+  def initialize(name)
     @bg = Res.img(:bg_1)
 
     @tileset = Res.tileset('1', 20, 20)
@@ -24,7 +24,7 @@ class Screen
     @tiles_t = Array.new(32) { Array.new(18) }
     @obstacles_f = []
     @obstacles_t = []
-    File.open("#{Res.prefix}screen/1.txt") do |f|
+    File.open("#{Res.prefix}screen/#{name}.txt") do |f|
       front, front_obs, top, top_obs = f.read.split('|', -1).map { |s| s.split(';') }
 
       i = 0; j = 0
@@ -154,8 +154,6 @@ class Screen
       alpha = (204 * a).round
       G.window.draw_rect(@blocker.x, @blocker.y, @blocker.w, @blocker.h, (alpha << 24) | 0xff0000, 0)
     end
-
-    Game.font_nisled.draw_text('abkdã efghé ijlmn oprsó utvxz', 10, 10, 0, 1, 1, 0xff000000)
   end
 
   private

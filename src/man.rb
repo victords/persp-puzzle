@@ -16,6 +16,7 @@ class Man < GameObject
     super(x, y, WIDTH, HEIGHT, :sprite_man, Vector.new(-1, -5), 3, 3)
     @max_speed = Vector.new(MAX_SPEED_F, 12)
 
+    @front_y = y
     @z = z
     @front = true
     @angle = nil
