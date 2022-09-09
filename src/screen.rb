@@ -142,6 +142,8 @@ class Screen
       alpha = (204 * a).round
       G.window.draw_rect(@blocker.x, @blocker.y, @blocker.w, @blocker.h, (alpha << 24) | 0xff0000, 0)
     end
+
+    Game.font_nisled.draw_text('abkdã efghé ijlmn oprsó utvxz', 10, 10, 0, 1, 1, 0xff000000)
   end
 
   private
