@@ -1,78 +1,8 @@
 require 'minigl'
-require_relative '../screen'
+require_relative 'screen'
 require_relative '../constants'
 
 include MiniGL
-
-class EditorScreen < Screen
-  attr_reader :toggling
-
-  def file_contents
-    i = j = 0
-    forward = lambda do
-      i += 1
-      if i == TILE_X_COUNT
-        i = 0
-        j += 1
-      end
-    end
-
-    count = 0
-    last_tile = -1
-    tiles_f = []
-    add_f_tile = lambda do
-      if last_tile
-        tiles_f << (count > 1 ? "#{last_tile}*#{count}" : last_tile.to_s)
-      else
-        tiles_f << "_#{count}"
-      end
-    end
-
-    while j < TILE_Y_COUNT
-      tile = @tiles_f[i][j]
-      if tile == last_tile
-        count += 1
-      else
-        add_f_tile.call if last_tile != -1
-        last_tile = tile
-        count = 1
-      end
-      forward.call
-    end
-    add_f_tile.call
-
-    i = j = count = 0
-    last_tiles = nil
-    tiles_t = []
-    add_t_tile = lambda do
-      if count > 1
-        tiles_t << "#{last_tiles[0].join(':')}*#{count}"
-      else
-        tiles_t << last_tiles.map { |t| t.join(':') }.join(',')
-      end
-    end
-
-    while j < TILE_Y_COUNT
-      tiles = @tiles_t[i][j]
-      if tiles.count == 1 && tiles == last_tiles
-        count += 1
-      else
-        add_t_tile.call if last_tiles
-        last_tiles = tiles
-        count = 1
-      end
-      forward.call
-    end
-    add_t_tile.call
-
-    [
-      tiles_f.join(';'),
-      @obstacles_f.map { |o| "#{[o.x, o.y, o.w, o.h].map { |v| v / TILE_SIZE }.join(',')}:#{o.depth}" }.join(';'),
-      tiles_t.join(';'),
-      @obstacles_t.map.with_index { |os, i| os.map { |o| "#{[o.x, o.y, o.w, o.h].map { |v| v / TILE_SIZE }.join(',')}:#{i}" }.join(';') }.join(';')
-    ].join('|')
-  end
-end
 
 class EditorWindow < GameWindow
   def initialize
@@ -91,7 +21,10 @@ class EditorWindow < GameWindow
     overwrite = false
     @buttons = [
       Button.new(x: 10, y: 395, font: @font, text: 'Load', img: :editor_button) do
-        @screen = EditorScreen.new(@txt_name.text) unless @txt_name.text.empty?
+        unless @txt_name.text.empty?
+          @screen = EditorScreen.new(@txt_name.text)
+          @front = true
+        end
       end,
       (@btn_save = Button.new(x: 10, y: 435, font: @font, text: 'Save', img: :editor_button) do
         path = "#{Res.prefix}screen/#{@txt_name.text}.txt"
@@ -106,9 +39,34 @@ class EditorWindow < GameWindow
         end
       end),
       Button.new(x: 10, y: 475, font: @font, text: 'Toggle', img: :editor_button) do
-        @screen&.toggle_view
+        next unless @screen
+        @screen.toggle_view
+        @front = !@front
       end,
+      Button.new(x: 10, y: 515, img: :editor_arrowUp) do
+        @depth += 1
+      end,
+      Button.new(x: 10, y: 531, img: :editor_arrowDown) do
+        @depth -= 1 if @depth > 0
+      end
     ]
+
+    tileset = Gosu::Image.new("#{Res.prefix}tileset/1.png")
+    @tileset = [
+      tileset.subimage(0, 0, 200, 100),
+      tileset.subimage(0, 100, 200, 100),
+    ]
+    (0..9).each do |i|
+      (0..4).each do |j|
+        @buttons << (Button.new(x: 120 + i * TILE_SIZE, y: 370 + j * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE) do
+          next unless @screen
+          @cur_obj = [:tile, 10 * j + i]
+        end)
+      end
+    end
+
+    @front = true
+    @depth = 0
   end
 
   def save(path)
@@ -127,6 +85,19 @@ class EditorWindow < GameWindow
 
     @txt_name.update
     @buttons.each(&:update)
+
+    return unless @screen && Mouse.over?(0, 0, 640, 360)
+
+    i = Mouse.x / TILE_SIZE
+    j = Mouse.y / TILE_SIZE
+    if Mouse.button_down?(:left)
+      case @cur_obj&.[](0)
+      when :tile
+        @screen.change_tile(i, j, @cur_obj[1], @depth)
+      end
+    elsif Mouse.button_down?(:right)
+      @screen.delete_tile(i, j)
+    end
   end
 
   def draw
@@ -136,6 +107,16 @@ class EditorWindow < GameWindow
 
     @txt_name.draw
     @buttons.each(&:draw)
+    @font.draw_text("Depth: #{@depth}", 48, 525, 0, 1, 1, 0xff000000)
+
+    @tileset[@front ? 0 : 1].draw(120, 370, 0) if @screen
+    if @cur_obj
+      if @cur_obj[0] == :tile
+        i = @cur_obj[1] % 10
+        j = @cur_obj[1] / 10
+        G.window.draw_rect(120 + i * TILE_SIZE, 370 + j * TILE_SIZE, TILE_SIZE, TILE_SIZE, 0x80ffff00, 0)
+      end
+    end
   end
 end
 

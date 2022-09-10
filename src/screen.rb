@@ -19,7 +19,7 @@ class Screen
   def initialize(name)
     @bg = Res.img(:bg_1)
 
-    @tileset = Res.tileset('1', 20, 20)
+    @tileset = Res.tileset('1', TILE_SIZE, TILE_SIZE)
     @tiles_f = Array.new(32) { Array.new(18) }
     @tiles_t = Array.new(32) { Array.new(18) }
     @obstacles_f = []
@@ -91,13 +91,17 @@ class Screen
     @timer = 0
   end
 
+  def toggle_rate
+    Math::PI / 60
+  end
+
   def obstacles
     @front ? @obstacles_f : @obstacles_t.flatten
   end
 
   def update
     if @toggling
-      @angle += Math::PI / 60
+      @angle += toggle_rate
       if @angle >= Math::PI / 2
         if @toggling == 1
           @front = !@front
