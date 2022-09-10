@@ -93,8 +93,32 @@ class Screen
     @timer = 0
   end
 
-  def obstacles
-    @front ? @obstacles_f : @obstacles_t.flatten
+  def obstacles(depth = nil)
+    @front ? @obstacles_f : @obstacles_t[depth]
+  end
+
+  def intersecting_tiles(x, y, w, h)
+    i1 = x.floor / TILE_SIZE
+    j1 = y.floor / TILE_SIZE
+    i2 = (x + w).floor / TILE_SIZE
+    j2 = (y + h).floor / TILE_SIZE
+    (i1..i2).reduce([]) do |tiles, i|
+      @tiles_t[i][j1..j2].each do |cell|
+        tiles.concat(cell)
+      end
+      tiles
+    end
+  end
+
+  def find_z_by_depth(x, w, depth)
+    i1 = x.floor / TILE_SIZE
+    i2 = (x + w).floor / TILE_SIZE
+    (i1..i2).each do |i|
+      (0...TILE_Y_COUNT).each do |j|
+        return (j + 0.5) * TILE_SIZE if @tiles_t[i][j].any? { |t| t[1] == depth }
+      end
+    end
+    nil
   end
 
   def update
@@ -105,7 +129,7 @@ class Screen
           @front = !@front
           @toggling = 2
           @angle = 0
-          @man.toggle_view
+          @man.toggle_view(self)
         else
           @toggling = nil
           @scale_y = 1

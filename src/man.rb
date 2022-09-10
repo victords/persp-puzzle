@@ -18,9 +18,14 @@ class Man < GameObject
 
     @front_y = y
     @z = z
+    @depth = 0
     @front = true
     @angle = nil
     @facing_right = true
+  end
+
+  def temp_bounds
+    Rectangle.new(@x, @phys_y, @w, @h)
   end
 
   def start_toggle
@@ -29,7 +34,7 @@ class Man < GameObject
     @toggling = true
   end
 
-  def toggle_view
+  def toggle_view(screen)
     @front = !@front
     if @front
       @h = HEIGHT
@@ -43,11 +48,23 @@ class Man < GameObject
       @angle = @facing_right ? 0 : 180
       @img_gap.y = -14
       set_animation(6)
+
+      tiles = screen.intersecting_tiles(@x, @phys_y, @w, @h)
+      unless tiles.any? { |t| t[1] == @depth }
+        z = screen.find_z_by_depth(@x, @w, @depth)
+        @phys_y = z - @h / 2 if z
+      end
+      screen.obstacles(@depth).select { |o| o.bounds.intersect?(temp_bounds) }.each do |o|
+        @x = o.x - @w if @x < o.x && @x + @w > o.x
+        @x = o.x + o.w if @x > o.x && @x < o.x + o.w
+        @y = o.y - @h if @y < o.y && @y + @h > o.y
+        @y = o.y + o.h if @y > o.y && @y < o.y + o.h
+      end
     end
   end
 
   def end_toggle(screen)
-    if (obst = screen.obstacles.find { |o| o.bounds.intersect?(bounds) })
+    if @front && (obst = screen.obstacles.find { |o| o.bounds.intersect?(bounds) })
       screen.toggle_view_blocked(obst)
       return
     end
@@ -90,6 +107,7 @@ class Man < GameObject
         else
           animate([0, 1], 10)
         end
+        @depth = @bottom.depth
       end
 
       if @facing_right && @speed.x < 0
@@ -126,7 +144,7 @@ class Man < GameObject
           [Vector.new, @angle]
         end
 
-      move(forces, screen.obstacles, [], true)
+      move(forces, screen.obstacles(@depth), [], true)
       if @speed.x == 0 && @speed.y == 0
         set_animation(6)
       else

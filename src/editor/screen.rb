@@ -72,10 +72,10 @@ class EditorScreen < Screen
   end
 
   def toggle_immediate
+    @front = !@front
     @man.start_toggle
     @man.toggle_view
     @man.end_toggle(self)
-    @front = !@front
   end
 
   def change_tile(i, j, tile, depth)
