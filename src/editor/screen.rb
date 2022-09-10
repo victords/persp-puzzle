@@ -41,7 +41,9 @@ class EditorScreen < Screen
     last_tiles = nil
     tiles_t = []
     add_t_tile = lambda do
-      if count > 1
+      if last_tiles.empty?
+        tiles_t << "_#{count}"
+      elsif count > 1
         tiles_t << "#{last_tiles[0].join(':')}*#{count}"
       else
         tiles_t << last_tiles.map { |t| t.join(':') }.join(',')
@@ -50,7 +52,7 @@ class EditorScreen < Screen
 
     while j < TILE_Y_COUNT
       tiles = @tiles_t[i][j]
-      if tiles.count == 1 && tiles == last_tiles
+      if tiles.count <= 1 && tiles == last_tiles
         count += 1
       else
         add_t_tile.call if last_tiles
@@ -87,7 +89,7 @@ class EditorScreen < Screen
     if @front
       @tiles_f[i][j] = nil
     else
-      @tiles_t[i][j] = [[49, 0]]
+      @tiles_t[i][j] = []
       @max_depth = @tiles_t.flatten.select.with_index { |_, i| i.odd? }.max
     end
   end

@@ -21,20 +21,24 @@ class Screen
 
     @tileset = Res.tileset('1', TILE_SIZE, TILE_SIZE)
     @tiles_f = Array.new(32) { Array.new(18) }
-    @tiles_t = Array.new(32) { Array.new(18) }
+    @tiles_t = Array.new(32) { Array.new(18) { [] } }
     @obstacles_f = []
     @obstacles_t = []
+
+    @front = true
+    @scale_y = 1
+    @max_depth = 0
+    @man = Man.new(0, 0, 0)
+    return unless name
+
     File.open("#{Res.prefix}screen/#{name}.txt") do |f|
       front, front_obs, top, top_obs = f.read.split('|', -1).map { |s| s.split(';') }
 
       i = 0; j = 0
       front.each do |d|
         if d[0] == '_'
-          n = d[1..].to_i
-          prev_i = i
-          i = (i + n) % TILE_X_COUNT
-          j += n / TILE_X_COUNT
-          j += 1 if i < prev_i
+          count = d[1..].to_i
+          i, j = skip_tiles(i, j, count)
         elsif d.index('*')
           tile = d.to_i
           count = d.split('*')[1].to_i
@@ -49,9 +53,11 @@ class Screen
       end
 
       i = 0; j = 0
-      @max_depth = 0
       top.each do |d|
-        if d.index('*')
+        if d[0] == '_'
+          count = d[1..].to_i
+          i, j = skip_tiles(i, j, count)
+        elsif d.index('*')
           tile = d.to_i
           depth, count = d.split(':')[1].split('*').map(&:to_i)
           count.times { i, j = set_tile(@tiles_t, [[tile, depth]], i, j) }
@@ -73,11 +79,6 @@ class Screen
         @obstacles_t[depth] << Block.new(*bounds.split(',').map { |s| s.to_i * TILE_SIZE })
       end
     end
-
-    @front = true
-    @scale_y = 1
-
-    @man = Man.new(0, 0, 0)
   end
 
   def toggle_view
@@ -143,8 +144,8 @@ class Screen
         if @front
           @tileset[@tiles_f[i][j]].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @scale_y, 0, 1, @scale_y) if @tiles_f[i][j]
         else
-          @tiles_t[i][j]&.each do |(index, depth)|
-            dim = 255 - (MAX_DIM_TINT * (@max_depth - depth).to_f / @max_depth).round
+          @tiles_t[i][j].each do |(index, depth)|
+            dim = @max_depth == 0 ? 255 : 255 - (MAX_DIM_TINT * (@max_depth - depth).to_f / @max_depth).round
             color = 0xff000000 | (dim << 16) | (dim << 8) | dim
             @tileset[TOP_TILE_OFFSET + index].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @scale_y, depth, 1, @scale_y, color)
           end
@@ -170,6 +171,14 @@ class Screen
       i = 0
       j += 1
     end
+    [i, j]
+  end
+
+  def skip_tiles(i, j, count)
+    prev_i = i
+    i = (i + count) % TILE_X_COUNT
+    j += count / TILE_X_COUNT
+    j += 1 if i < prev_i
     [i, j]
   end
 end

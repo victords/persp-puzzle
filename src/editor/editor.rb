@@ -27,6 +27,7 @@ class EditorWindow < GameWindow
         end
       end,
       (@btn_save = Button.new(x: 10, y: 435, font: @font, text: 'Save', img: :editor_button) do
+        next if @txt_name.text.empty?
         path = "#{Res.prefix}screen/#{@txt_name.text}.txt"
         if overwrite
           save(path)
@@ -39,7 +40,6 @@ class EditorWindow < GameWindow
         end
       end),
       Button.new(x: 10, y: 475, font: @font, text: 'Toggle', img: :editor_button) do
-        next unless @screen
         @screen.toggle_view
         @front = !@front
       end,
@@ -59,12 +59,12 @@ class EditorWindow < GameWindow
     (0..9).each do |i|
       (0..4).each do |j|
         @buttons << (Button.new(x: 120 + i * TILE_SIZE, y: 370 + j * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE) do
-          next unless @screen
           @cur_obj = [:tile, 10 * j + i]
         end)
       end
     end
 
+    @screen = EditorScreen.new(nil)
     @front = true
     @depth = 0
   end
@@ -81,12 +81,12 @@ class EditorWindow < GameWindow
     Mouse.update
     close if KB.key_pressed?(Gosu::KB_ESCAPE)
 
-    @screen&.update if @screen&.toggling
+    @screen.update if @screen.toggling
 
     @txt_name.update
     @buttons.each(&:update)
 
-    return unless @screen && Mouse.over?(0, 0, 640, 360)
+    return unless Mouse.over?(0, 0, 640, 360)
 
     i = Mouse.x / TILE_SIZE
     j = Mouse.y / TILE_SIZE
@@ -103,13 +103,13 @@ class EditorWindow < GameWindow
   def draw
     clear(0xffffff)
 
-    @screen&.draw
+    @screen.draw
 
     @txt_name.draw
     @buttons.each(&:draw)
     @font.draw_text("Depth: #{@depth}", 48, 525, 0, 1, 1, 0xff000000)
 
-    @tileset[@front ? 0 : 1].draw(120, 370, 0) if @screen
+    @tileset[@front ? 0 : 1].draw(120, 370, 0)
     if @cur_obj
       if @cur_obj[0] == :tile
         i = @cur_obj[1] % 10
