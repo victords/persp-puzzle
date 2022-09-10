@@ -3,11 +3,11 @@ require_relative 'man'
 
 include MiniGL
 
-class FBlock < Block
+class DepthBlock < Block
   attr_reader :depth
 
-  def initialize(x, y, w, h, depth)
-    super(x, y, w, h)
+  def initialize(x, y, w, h, depth, passable = false)
+    super(x, y, w, h, passable)
     @depth = depth
   end
 end
@@ -49,7 +49,7 @@ class Screen
       end
       front_obs.each do |obs|
         bounds, depth = obs.split(':')
-        @obstacles_f << FBlock.new(*bounds.split(',').map { |s| s.to_i * TILE_SIZE }, depth)
+        @obstacles_f << DepthBlock.new(*bounds.split(',').map { |s| s.to_i * TILE_SIZE }, depth.to_i)
       end
 
       i = 0; j = 0

@@ -93,4 +93,40 @@ class EditorScreen < Screen
       @max_depth = @tiles_t.flatten.select.with_index { |_, i| i.odd? }.max
     end
   end
+
+  def add_obstacle(i1, j1, i2, j2, depth)
+    x = i1 * TILE_SIZE
+    y = j1 * TILE_SIZE
+    w = (i2 - i1 + 1) * TILE_SIZE
+    h = (j2 - j1 + 1) * TILE_SIZE
+    if @front
+      block = DepthBlock.new(x, y, w, h, depth)
+      @obstacles_f.delete_if { |o| o.bounds.intersect?(block.bounds) }
+      @obstacles_f << block
+    else
+      @obstacles_t[depth] ||= []
+      block = Block.new(x, y, w, h)
+      @obstacles_t[depth].delete_if { |o| o.bounds.intersect?(block.bounds) }
+      @obstacles_t[depth] << block
+    end
+  end
+
+  def delete_obstacle(i, j, depth)
+    x = i * TILE_SIZE
+    y = j * TILE_SIZE
+    list = @front ? @obstacles_f : @obstacles_t[depth]
+    list.delete_if { |o| o.x <= x && o.x + o.w > x && o.y <= y && o.y + o.h > y && (o.is_a?(Block) || o.depth == depth) }
+  end
+
+  def draw(depth)
+    super()
+
+    list = @front ? @obstacles_f.select { |o| o.depth == depth } : @obstacles_t[depth]
+    list&.each do |o|
+      G.window.draw_quad(o.x, o.y, 0x80ff0000,
+                         o.x + o.w, o.y, 0x8000ff00,
+                         o.x, o.y + o.h, 0x800000ff,
+                         o.x + o.w, o.y + o.h, 0x80cccccc, 100)
+    end
+  end
 end
