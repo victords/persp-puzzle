@@ -68,6 +68,7 @@ class Screen
       end
       top_obs.each do |obs|
         bounds, depth = obs.split(':')
+        depth = depth.to_i
         @obstacles_t[depth] ||= []
         @obstacles_t[depth] << Block.new(*bounds.split(',').map { |s| s.to_i * TILE_SIZE })
       end
@@ -91,7 +92,7 @@ class Screen
   end
 
   def obstacles
-    @front ? @obstacles_f : @obstacles_t
+    @front ? @obstacles_f : @obstacles_t.flatten
   end
 
   def update
