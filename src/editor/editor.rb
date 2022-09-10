@@ -19,7 +19,7 @@ class EditorWindow < GameWindow
                            6, 6, 6, 6, 6, 4, 6, 6, 2, 4, 5, 3, 8, 6, 6, 6, 6, 5, 6, 4, 6, 6, 8, 6, 6, 6,
                            6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
                            6, 4, 6, 6, 6, 6, 6, 6, 6, 6, 2, 3, 2, 3, 2, 6, 2, 6, 5, 5, 3, 3, 3, 3, 6, 4, 6, 2, 4, 8, 8,
-                           10, 6, 6, 6, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 6, 6, 6, 6], 11, 3)
+                           10, 6, 6, 6, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 6, 6, 6, 6], 12, 3)
 
     @txt_name = TextField.new(x: 10, y: 370, font: @font, img: :editor_textField, margin_x: 5, margin_y: 2)
 
@@ -64,7 +64,7 @@ class EditorWindow < GameWindow
     ]
 
     @labels = [
-      Label.new(x: 48, y: 565, font: @font, text: "Depth: #{@depth}"),
+      Label.new(x: 48, y: 564, font: @font, text: "Depth: #{@depth}"),
     ]
 
     tileset = Gosu::Image.new("#{Res.prefix}tileset/1.png")
