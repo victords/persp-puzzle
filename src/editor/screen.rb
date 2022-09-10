@@ -71,8 +71,11 @@ class EditorScreen < Screen
     ].join('|')
   end
 
-  def toggle_rate
-    Math::PI / 2
+  def toggle_immediate
+    @man.start_toggle
+    @man.toggle_view
+    @man.end_toggle(self)
+    @front = !@front
   end
 
   def change_tile(i, j, tile, depth)

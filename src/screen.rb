@@ -13,6 +13,7 @@ class DepthBlock < Block
 end
 
 class Screen
+  TOGGLE_RATE = Math::PI / 60
   BLOCKER_T1 = 10
   BLOCKER_T2 = 50
 
@@ -92,17 +93,13 @@ class Screen
     @timer = 0
   end
 
-  def toggle_rate
-    Math::PI / 60
-  end
-
   def obstacles
     @front ? @obstacles_f : @obstacles_t.flatten
   end
 
   def update
     if @toggling
-      @angle += toggle_rate
+      @angle += TOGGLE_RATE
       if @angle >= Math::PI / 2
         if @toggling == 1
           @front = !@front

@@ -45,7 +45,7 @@ class EditorWindow < GameWindow
         end
       end),
       Button.new(x: 10, y: 475, font: @font, text: 'Toggle', img: :editor_button) do
-        @screen.toggle_view
+        @screen.toggle_immediate
         @front = !@front
       end,
       Button.new(x: 10, y: 515, font: @font, text: 'Obstacle', img: :editor_button) do
