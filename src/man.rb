@@ -49,8 +49,8 @@ class Man < GameObject
       @img_gap.y = -14
       set_animation(6)
 
-      tiles = screen.intersecting_tiles(@x, @phys_y, @w, @h)
-      unless tiles.any? { |t| t[1] == @depth }
+      depths = screen.intersecting_tile_depths(@x, @phys_y, @w, @h)
+      unless depths.include?(@depth)
         z = screen.find_z_by_depth(@x, @w, @depth)
         @phys_y = z - @h / 2 if z
       end

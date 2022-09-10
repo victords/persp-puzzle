@@ -97,16 +97,13 @@ class Screen
     @front ? @obstacles_f : @obstacles_t[depth]
   end
 
-  def intersecting_tiles(x, y, w, h)
+  def intersecting_tile_depths(x, y, w, h)
     i1 = x.floor / TILE_SIZE
     j1 = y.floor / TILE_SIZE
     i2 = (x + w).floor / TILE_SIZE
     j2 = (y + h).floor / TILE_SIZE
     (i1..i2).reduce([]) do |tiles, i|
-      @tiles_t[i][j1..j2].each do |cell|
-        tiles.concat(cell)
-      end
-      tiles
+      tiles.concat(@tiles_t[i][j1..j2].map { |cell| cell.map { |t| t[1] }.max })
     end
   end
 

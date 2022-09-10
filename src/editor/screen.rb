@@ -1,7 +1,16 @@
 require_relative '../screen'
 
+class EditorMan
+  def draw(*args); end
+end
+
 class EditorScreen < Screen
   attr_reader :toggling
+
+  def initialize(name)
+    super
+    @man = EditorMan.new
+  end
 
   def file_contents
     i = j = 0
@@ -73,9 +82,6 @@ class EditorScreen < Screen
 
   def toggle_immediate
     @front = !@front
-    @man.start_toggle
-    @man.toggle_view
-    @man.end_toggle(self)
   end
 
   def change_tile(i, j, tile, depth)
