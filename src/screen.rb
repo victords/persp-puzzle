@@ -139,10 +139,10 @@ class Screen
         if @front
           @tileset[@tiles_f[i][j]].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @scale_y, 0, 1, @scale_y) if @tiles_f[i][j]
         else
-          @tiles_t[i][j]&.each do |tile_info|
-            dim = 255 - (MAX_DIM_TINT * (@max_depth - tile_info[1]).to_f / @max_depth).round
+          @tiles_t[i][j]&.each do |(index, depth)|
+            dim = 255 - (MAX_DIM_TINT * (@max_depth - depth).to_f / @max_depth).round
             color = 0xff000000 | (dim << 16) | (dim << 8) | dim
-            @tileset[TOP_TILE_OFFSET + tile_info[0]].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @scale_y, 0, 1, @scale_y, color)
+            @tileset[TOP_TILE_OFFSET + index].draw(i * TILE_SIZE, offset_y + j * TILE_SIZE * @scale_y, depth, 1, @scale_y, color)
           end
         end
       end
@@ -153,7 +153,7 @@ class Screen
     if @blocker
       a = @timer >= BLOCKER_T1 ? 1 - ((@timer - BLOCKER_T1).to_f / BLOCKER_T2) : @timer.to_f / BLOCKER_T1
       alpha = (204 * a).round
-      G.window.draw_rect(@blocker.x, @blocker.y, @blocker.w, @blocker.h, (alpha << 24) | 0xff0000, 0)
+      G.window.draw_rect(@blocker.x, @blocker.y, @blocker.w, @blocker.h, (alpha << 24) | 0xff0000, 100)
     end
   end
 

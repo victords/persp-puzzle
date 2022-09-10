@@ -139,6 +139,6 @@ class Man < GameObject
 
   def draw(offset_y, scale_y)
     @y = offset_y + scale_y * @phys_y if @toggling
-    super(nil, 1, scale_y, 255, 0xffffff, @angle, !@front || @facing_right ? nil : :horiz)
+    super(nil, 1, scale_y, 255, 0xffffff, @angle, !@front || @facing_right ? nil : :horiz, 100)
   end
 end
