@@ -51,11 +51,15 @@ class EditorWindow < GameWindow
       Button.new(x: 10, y: 515, font: @font, text: 'Obstacle', img: :editor_button) do
         @cur_obj = [:obstacle]
       end,
-      Button.new(x: 10, y: 555, img: :editor_arrowUp) do
+      (@chk_passable =
+        ToggleButton.new(x: 10, y: 555, font: @font, text: 'Passable', img: :editor_check,
+                         center_x: false, center_y: false, margin_x: 25, margin_y: 2)
+      ),
+      Button.new(x: 10, y: 580, img: :editor_arrowUp) do
         @depth += 1
         @labels[0].text = "Depth: #{@depth}"
       end,
-      Button.new(x: 10, y: 571, img: :editor_arrowDown) do
+      Button.new(x: 10, y: 596, img: :editor_arrowDown) do
         if @depth > 0
           @depth -= 1
           @labels[0].text = "Depth: #{@depth}"
@@ -64,7 +68,7 @@ class EditorWindow < GameWindow
     ]
 
     @labels = [
-      Label.new(x: 48, y: 564, font: @font, text: "Depth: #{@depth}"),
+      Label.new(x: 48, y: 589, font: @font, text: "Depth: #{@depth}"),
     ]
 
     tileset = Gosu::Image.new("#{Res.prefix}tileset/1.png")
@@ -131,7 +135,7 @@ class EditorWindow < GameWindow
       end
     elsif Mouse.button_released?(:left)
       if cur_obj_type == :obstacle
-        @screen.add_obstacle(*@area[2..], @depth) if @area
+        @screen.add_obstacle(*@area[2..], @chk_passable.checked, @depth) if @area
       end
       @area = nil
     end

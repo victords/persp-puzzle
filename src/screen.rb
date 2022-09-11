@@ -6,7 +6,7 @@ include MiniGL
 class DepthBlock < Block
   attr_reader :depth
 
-  def initialize(x, y, w, h, depth, passable = false)
+  def initialize(x, y, w, h, passable, depth)
     super(x, y, w, h, passable)
     @depth = depth
   end
@@ -50,7 +50,7 @@ class Screen
       end
       front_obs.each do |obs|
         bounds, depth = obs.split(':')
-        @obstacles_f << DepthBlock.new(*bounds.split(',').map { |s| s.to_i * TILE_SIZE }, depth.to_i)
+        @obstacles_f << DepthBlock.new(*bounds.split(',').map { |s| s.to_i * TILE_SIZE }, obs.end_with?('!'), depth.to_i)
       end
 
       i = 0; j = 0

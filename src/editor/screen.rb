@@ -46,6 +46,10 @@ class EditorScreen < Screen
     end
     add_f_tile.call
 
+    obstacles_f = @obstacles_f.map do |o|
+      "#{[o.x, o.y, o.w, o.h].map { |v| v / TILE_SIZE }.join(',')}:#{o.depth}#{o.passable ? '!' : ''}"
+    end
+
     i = j = count = 0
     last_tiles = nil
     tiles_t = []
@@ -72,11 +76,15 @@ class EditorScreen < Screen
     end
     add_t_tile.call
 
+    obstacles_t = @obstacles_t.map.with_index do |os, i|
+      os.map { |o| "#{[o.x, o.y, o.w, o.h].map { |v| v / TILE_SIZE }.join(',')}:#{i}" }.join(';')
+    end
+
     [
       tiles_f.join(';'),
-      @obstacles_f.map { |o| "#{[o.x, o.y, o.w, o.h].map { |v| v / TILE_SIZE }.join(',')}:#{o.depth}" }.join(';'),
+      obstacles_f.join(';'),
       tiles_t.join(';'),
-      @obstacles_t.map.with_index { |os, i| os.map { |o| "#{[o.x, o.y, o.w, o.h].map { |v| v / TILE_SIZE }.join(',')}:#{i}" }.join(';') }.join(';')
+      obstacles_t.join(';')
     ].join('|')
   end
 
@@ -103,13 +111,13 @@ class EditorScreen < Screen
     end
   end
 
-  def add_obstacle(i1, j1, i2, j2, depth)
+  def add_obstacle(i1, j1, i2, j2, passable, depth)
     x = i1 * TILE_SIZE
     y = j1 * TILE_SIZE
     w = (i2 - i1 + 1) * TILE_SIZE
     h = (j2 - j1 + 1) * TILE_SIZE
     if @front
-      block = DepthBlock.new(x, y, w, h, depth)
+      block = DepthBlock.new(x, y, w, h, passable, depth)
       @obstacles_f.delete_if { |o| o.bounds.intersect?(block.bounds) }
       @obstacles_f << block
     else
