@@ -21,6 +21,10 @@ class Game
       @controller = Screen.new('1')
     end
 
+    def go_to(screen, entrance)
+      @controller = Screen.new(screen, entrance)
+    end
+
     def update
       KB.update
       @controller.update

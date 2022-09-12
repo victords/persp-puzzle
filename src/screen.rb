@@ -12,31 +12,76 @@ class DepthBlock < Block
   end
 end
 
+class Entrance
+  attr_reader :col, :row, :x, :y, :dir
+
+  def initialize(i, j, top)
+    @col = i
+    @row = j
+    @x = i * TILE_SIZE + TILE_SIZE / 2
+    @y = j * TILE_SIZE + (top ? TILE_SIZE / 2 : TILE_SIZE)
+    @dir = if j == TILE_Y_COUNT - 1
+             0
+           elsif i == 0
+             1
+           elsif j == 0
+             2
+           else
+             3
+           end
+  end
+end
+
+class Exit
+  attr_reader :col, :row, :bounds, :dest_scr, :dest_ent
+
+  def initialize(i, j, dest_scr, dest_ent)
+    @col = i
+    @row = j
+    x = i * TILE_SIZE
+    x += TILE_SIZE - 1 if i == TILE_X_COUNT - 1
+    y = j * TILE_SIZE
+    y += TILE_SIZE - 1 if j == TILE_Y_COUNT - 1
+    w = i == 0 || i == TILE_X_COUNT - 1 ? 1 : TILE_SIZE
+    h = j == 0 || j == TILE_Y_COUNT - 1 ? 1 : TILE_SIZE
+    @bounds = Rectangle.new(x, y, w, h)
+
+    @dest_scr = dest_scr
+    @dest_ent = dest_ent
+  end
+end
+
 class Screen
   TOGGLE_RATE = Math::PI / 60
   BLOCKER_T1 = 10
   BLOCKER_T2 = 50
 
-  def initialize(name)
+  def initialize(name, entrance_index = 0)
     @bg = Res.img(:bg_1)
 
     @tileset = Res.tileset('1', TILE_SIZE, TILE_SIZE)
+
     @tiles_f = Array.new(32) { Array.new(18) }
-    @tiles_t = Array.new(32) { Array.new(18) { [] } }
     @obstacles_f = []
+    @entrances_f = []
+    @exits_f = []
+
+    @tiles_t = Array.new(32) { Array.new(18) { [] } }
     @obstacles_t = []
+    @entrances_t = []
+    @exits_t = []
 
     @front = true
     @scale_y = 1
     @max_depth = 0
-    @man = Man.new(0, 0, 0)
     return unless name
 
     File.open("#{Res.prefix}screen/#{name}.txt") do |f|
-      front, front_obs, top, top_obs = f.read.split('|', -1).map { |s| s.split(';') }
+      tiles_f, obst_f, ent_f, exit_f, tiles_t, obst_t, ent_t, exit_t =
+        f.read.split('|', -1).map { |s| s.split(';') }
 
       i = 0; j = 0
-      front.each do |d|
+      tiles_f.each do |d|
         if d[0] == '_'
           count = d[1..].to_i
           i, j = skip_tiles(i, j, count)
@@ -48,13 +93,15 @@ class Screen
           i, j = set_tile(@tiles_f, d.to_i, i, j)
         end
       end
-      front_obs.each do |obs|
+      obst_f.each do |obs|
         bounds, depth = obs.split(':')
         @obstacles_f << DepthBlock.new(*bounds.split(',').map { |s| s.to_i * TILE_SIZE }, obs.end_with?('!'), depth.to_i)
       end
+      @entrances_f = ent_f.map { |e| Entrance.new(*e.split(',').map(&:to_i), false) }
+      @exits_f = exit_f.map { |e| Exit.new(*e.split(',').map(&:to_i)) }
 
       i = 0; j = 0
-      top.each do |d|
+      tiles_t.each do |d|
         if d[0] == '_'
           count = d[1..].to_i
           i, j = skip_tiles(i, j, count)
@@ -73,13 +120,17 @@ class Screen
           i, j = set_tile(@tiles_t, tiles, i, j)
         end
       end
-      top_obs.each do |obs|
+      obst_t.each do |obs|
         bounds, depth = obs.split(':')
         depth = depth.to_i
         @obstacles_t[depth] ||= []
         @obstacles_t[depth] << Block.new(*bounds.split(',').map { |s| s.to_i * TILE_SIZE })
       end
+      @entrances_t = ent_t.map { |e| Entrance.new(*e.split(',').map(&:to_i), true) }
+      @exits_t = exit_t.map { |e| Exit.new(*e.split(',').map(&:to_i)) }
     end
+
+    @man = Man.new(@entrances_f[entrance_index].x, @entrances_f[entrance_index].y, @entrances_t[entrance_index].y)
   end
 
   def toggle_view
@@ -148,6 +199,10 @@ class Screen
     end
 
     @man.update(self)
+    ex_list = @front ? @exits_f : @exits_t
+    if (ex = ex_list.find { |e| e.bounds.intersect?(@man.bounds) })
+      Game.go_to(ex.dest_scr, ex.dest_ent)
+    end
 
     toggle_view if KB.key_pressed?(Gosu::KB_SPACE)
   end

@@ -6,13 +6,13 @@ include MiniGL
 
 class EditorWindow < GameWindow
   def initialize
-    super(640, 720, false)
+    super(640, 800, false)
     Res.prefix = File.expand_path(__FILE__).split('/')[0..-4].join('/') + '/data'
     Res.retro_images = true
 
-    @screen = EditorScreen.new(nil)
     @front = true
     @depth = 0
+    @entrance_index = 0
 
     @font = ImageFont.new(:font_normal, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÁÉÍÓÚÀÃÕÂÊÔÑÇáéíóúàãõâêôñç0123456789.,:;!?¡¿/\\()[]+-%'\"←→∞$ĞğİıÖöŞşÜüĈĉĜĝĤĥĴĵŜŝŬŭ",
                           [6, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
@@ -20,18 +20,18 @@ class EditorWindow < GameWindow
                            6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
                            6, 4, 6, 6, 6, 6, 6, 6, 6, 6, 2, 3, 2, 3, 2, 6, 2, 6, 5, 5, 3, 3, 3, 3, 6, 4, 6, 2, 4, 8, 8,
                            10, 6, 6, 6, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 6, 6, 6, 6], 12, 3)
-
-    @txt_name = TextField.new(x: 10, y: 370, font: @font, img: :editor_textField, margin_x: 5, margin_y: 2)
+    @screen = EditorScreen.new(nil, @font)
 
     overwrite = false
-    @buttons = [
-      Button.new(x: 10, y: 395, font: @font, text: 'Load', img: :editor_button) do
+    @components = [
+      (@txt_name = TextField.new(x: 10, y: 370, font: @font, img: :editor_textField, margin_x: 5, margin_y: 2)),
+      Button.new(x: 10, y: 390, font: @font, text: 'Load', img: :editor_button) do
         unless @txt_name.text.empty?
-          @screen = EditorScreen.new(@txt_name.text)
+          @screen = EditorScreen.new(@txt_name.text, @font)
           @front = true
         end
       end,
-      (@btn_save = Button.new(x: 10, y: 435, font: @font, text: 'Save', img: :editor_button) do
+      (@btn_save = Button.new(x: 10, y: 425, font: @font, text: 'Save', img: :editor_button) do
         next if @txt_name.text.empty?
         path = "#{Res.prefix}screen/#{@txt_name.text}.txt"
         if overwrite
@@ -44,31 +44,48 @@ class EditorWindow < GameWindow
           save(path)
         end
       end),
-      Button.new(x: 10, y: 475, font: @font, text: 'Toggle', img: :editor_button) do
+      Button.new(x: 10, y: 465, font: @font, text: 'Toggle', img: :editor_button) do
         @screen.toggle_immediate
         @front = !@front
       end,
-      Button.new(x: 10, y: 515, font: @font, text: 'Obstacle', img: :editor_button) do
+      Button.new(x: 10, y: 505, font: @font, text: 'Obstacle', img: :editor_button) do
         @cur_obj = [:obstacle]
       end,
       (@chk_passable =
-        ToggleButton.new(x: 10, y: 555, font: @font, text: 'Passable', img: :editor_check,
+        ToggleButton.new(x: 10, y: 540, font: @font, text: 'Passable', img: :editor_check,
                          center_x: false, center_y: false, margin_x: 25, margin_y: 2)
       ),
-      Button.new(x: 10, y: 580, img: :editor_arrowUp) do
+      Button.new(x: 10, y: 560, img: :editor_arrowUp) do
         @depth += 1
-        @labels[0].text = "Depth: #{@depth}"
+        @lbl_depth.text = "Depth: #{@depth}"
       end,
-      Button.new(x: 10, y: 596, img: :editor_arrowDown) do
+      Button.new(x: 10, y: 576, img: :editor_arrowDown) do
         if @depth > 0
           @depth -= 1
-          @labels[0].text = "Depth: #{@depth}"
+          @lbl_depth.text = "Depth: #{@depth}"
         end
       end,
-    ]
-
-    @labels = [
-      Label.new(x: 48, y: 589, font: @font, text: "Depth: #{@depth}"),
+      (@lbl_depth = Label.new(x: 48, y: 569, font: @font, text: "Depth: #{@depth}")),
+      Button.new(x: 10, y: 600, font: @font, text: 'Entrance', img: :editor_button) do
+        @cur_obj = [:entrance]
+      end,
+      Button.new(x: 10, y: 635, img: :editor_arrowUp) do
+        @entrance_index += 1
+        @lbl_index.text = "Index: #{@entrance_index}"
+      end,
+      Button.new(x: 10, y: 651, img: :editor_arrowDown) do
+        if @entrance_index > 0
+          @entrance_index -= 1
+          @lbl_index.text = "Index: #{@entrance_index}"
+        end
+      end,
+      (@lbl_index = Label.new(x: 48, y: 644, font: @font, text: "Index: #{@entrance_index}")),
+      Button.new(x: 10, y: 675, font: @font, text: 'Exit', img: :editor_button) do
+        @cur_obj = [:exit]
+      end,
+      Label.new(x: 10, y: 710, font: @font, text: 'Destination'),
+      (@txt_dest_scr = TextField.new(x: 10, y: 725, font: @font, img: :editor_textFieldShort, margin_x: 5, margin_y: 2)),
+      (@txt_dest_ent = TextField.new(x: 63, y: 725, font: @font, img: :editor_textFieldShort, margin_x: 5, margin_y: 2)),
     ]
 
     tileset = Gosu::Image.new("#{Res.prefix}tileset/1.png")
@@ -78,7 +95,7 @@ class EditorWindow < GameWindow
     ]
     (0..9).each do |i|
       (0..4).each do |j|
-        @buttons << (Button.new(x: 120 + i * TILE_SIZE, y: 370 + j * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE) do
+        @components << (Button.new(x: 120 + i * TILE_SIZE, y: 370 + j * TILE_SIZE, width: TILE_SIZE, height: TILE_SIZE) do
           @cur_obj = [:tile, 10 * j + i]
         end)
       end
@@ -114,23 +131,31 @@ class EditorWindow < GameWindow
 
     @screen.update if @screen.toggling
 
-    @txt_name.update
-    @buttons.each(&:update)
+    @components.each do |c|
+      c.update if c.respond_to?(:update)
+    end
 
     return unless Mouse.over?(0, 0, 640, 360)
 
     i = Mouse.x / TILE_SIZE
     j = Mouse.y / TILE_SIZE
     if Mouse.button_down?(:left)
+      pressed = Mouse.button_pressed?(:left)
       case cur_obj_type
       when :tile
-        @screen.change_tile(i, j, @cur_obj[1], @depth)
+        @screen.add_tile(i, j, @cur_obj[1], @depth)
       when :obstacle
-        if Mouse.button_pressed?(:left)
+        if pressed
           # origin, min, max
           @area = [i, j, i, j, i, j]
         else
           update_area(i, j)
+        end
+      when :entrance
+        @screen.add_entrance(i, j, @entrance_index) if pressed
+      when :exit
+        if pressed && !@txt_dest_scr.text.empty? && !@txt_dest_ent.text.empty?
+          @screen.add_exit(i, j, @txt_dest_scr.text.to_i, @txt_dest_ent.text.to_i)
         end
       end
     elsif Mouse.button_released?(:left)
@@ -146,6 +171,10 @@ class EditorWindow < GameWindow
         @screen.delete_tile(i, j)
       when :obstacle
         @screen.delete_obstacle(i, j, @depth)
+      when :entrance
+        @screen.delete_entrance(i, j)
+      when :exit
+        @screen.delete_exit(i, j)
       end
     end
   end
@@ -162,9 +191,7 @@ class EditorWindow < GameWindow
                          0x80ffff00, 100)
     end
 
-    @txt_name.draw
-    @buttons.each(&:draw)
-    @labels.each(&:draw)
+    @components.each(&:draw)
 
     @tileset[@front ? 0 : 1].draw(120, 370, 0)
     if cur_obj_type == :tile

@@ -1,5 +1,7 @@
 require_relative '../screen'
 
+include MiniGL
+
 class EditorMan
   def draw(*args); end
 end
@@ -7,9 +9,11 @@ end
 class EditorScreen < Screen
   attr_reader :toggling
 
-  def initialize(name)
-    super
+  def initialize(name, font)
+    super(name)
     @man = EditorMan.new
+    @ent_ex_icon = Res.imgs(:editor_inOut, 2, 1)
+    @text_helper = TextHelper.new(font)
   end
 
   def file_contents
@@ -49,6 +53,8 @@ class EditorScreen < Screen
     obstacles_f = @obstacles_f.map do |o|
       "#{[o.x, o.y, o.w, o.h].map { |v| v / TILE_SIZE }.join(',')}:#{o.depth}#{o.passable ? '!' : ''}"
     end
+    entrances_f = @entrances_f.map { |e| "#{e.col},#{e.row}" }
+    exits_f = @exits_f.map { |e| "#{e.col},#{e.row},#{e.dest_scr},#{e.dest_ent}" }
 
     i = j = count = 0
     last_tiles = nil
@@ -79,12 +85,18 @@ class EditorScreen < Screen
     obstacles_t = @obstacles_t.map.with_index do |os, i|
       os.map { |o| "#{[o.x, o.y, o.w, o.h].map { |v| v / TILE_SIZE }.join(',')}:#{i}" }.join(';')
     end
+    entrances_t = @entrances_t.map { |e| "#{e.col},#{e.row}" }
+    exits_t = @exits_t.map { |e| "#{e.col},#{e.row},#{e.dest_scr},#{e.dest_ent}" }
 
     [
       tiles_f.join(';'),
       obstacles_f.join(';'),
+      entrances_f.join(';'),
+      exits_f.join(';'),
       tiles_t.join(';'),
-      obstacles_t.join(';')
+      obstacles_t.join(';'),
+      entrances_t.join(';'),
+      exits_t.join(';'),
     ].join('|')
   end
 
@@ -92,7 +104,7 @@ class EditorScreen < Screen
     @front = !@front
   end
 
-  def change_tile(i, j, tile, depth)
+  def add_tile(i, j, tile, depth)
     if @front
       @tiles_f[i][j] = tile
     else
@@ -135,15 +147,60 @@ class EditorScreen < Screen
     list.delete_if { |o| o.x <= x && o.x + o.w > x && o.y <= y && o.y + o.h > y && (o.is_a?(Block) || o.depth == depth) }
   end
 
+  def add_entrance(i, j, index)
+    list = delete_entrance(i, j)
+    ent = Entrance.new(i, j, !@front)
+    if index >= list.size
+      list << ent
+    else
+      list.insert(index, ent)
+    end
+  end
+
+  def delete_entrance(i, j)
+    list = @front ? @entrances_f : @entrances_t
+    list.delete_if { |e| e.col == i && e.row == j }
+    list
+  end
+
+  def add_exit(i, j, dest_scr, dest_ent)
+    list = delete_exit(i, j)
+    list << Exit.new(i, j, dest_scr, dest_ent)
+  end
+
+  def delete_exit(i, j)
+    list = @front ? @exits_f : @exits_t
+    list.delete_if { |e| e.col == i && e.row == j }
+    list
+  end
+
   def draw(depth)
     super()
 
-    list = @front ? @obstacles_f.select { |o| o.depth == depth } : @obstacles_t[depth]
-    list&.each do |o|
+    (0...TILE_X_COUNT).each do |i|
+      (0...TILE_Y_COUNT).each do |j|
+        G.window.draw_rect(i * TILE_SIZE + 1, j * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2, 0x80ffffff, 100)
+      end
+    end
+
+    obs_list = @front ? @obstacles_f.select { |o| o.depth == depth } : @obstacles_t[depth]
+    obs_list&.each do |o|
       G.window.draw_quad(o.x, o.y, 0x80ff0000,
                          o.x + o.w, o.y, 0x8000ff00,
                          o.x, o.y + o.h, 0x800000ff,
                          o.x + o.w, o.y + o.h, 0x80cccccc, 100)
+    end
+
+    ent_list = @front ? @entrances_f : @entrances_t
+    ent_list.each_with_index do |e, i|
+      @ent_ex_icon[0].draw(e.col * TILE_SIZE, e.row * TILE_SIZE, 100)
+      @text_helper.write_line(i.to_s, (e.col + 1) * TILE_SIZE - 3, e.row * TILE_SIZE + 8, :right, 0xffffff, 255, :border, 0, 1, 255, 100)
+    end
+
+    ex_list = @front ? @exits_f : @exits_t
+    ex_list.each do |e|
+      @ent_ex_icon[1].draw(e.col * TILE_SIZE, e.row * TILE_SIZE, 100)
+      @text_helper.write_line("#{e.dest_scr}:#{e.dest_ent}", (e.col + 0.5) * TILE_SIZE, e.row * TILE_SIZE + 8, :center, 0xffffff, 255, :border, 0, 1, 255, 100)
     end
   end
 end

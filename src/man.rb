@@ -13,11 +13,11 @@ class Man < GameObject
   MAX_SPEED_T_DIAG = MAX_SPEED_T * 0.5 * Math.sqrt(2)
 
   def initialize(x, y, z)
-    super(x, y, WIDTH, HEIGHT, :sprite_man, Vector.new(-1, -5), 3, 3)
+    super(x - WIDTH / 2, y - HEIGHT, WIDTH, HEIGHT, :sprite_man, Vector.new(-1, -5), 3, 3)
     @max_speed = Vector.new(MAX_SPEED_F, 12)
 
-    @front_y = y
-    @z = z
+    @front_y = @y
+    @z = z - WIDTH / 2
     @depth = 0
     @front = true
     @angle = nil
