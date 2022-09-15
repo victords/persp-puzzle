@@ -23,6 +23,7 @@ class EditorWindow < GameWindow
     @screen = EditorScreen.new(nil, @font)
 
     overwrite = false
+    object_names = Screen::OBJECT_TYPES.map(&:name)
     @components = [
       (@txt_name = TextField.new(x: 10, y: 370, font: @font, img: :editor_textField, margin_x: 5, margin_y: 2)),
       Button.new(x: 10, y: 390, font: @font, text: 'Load', img: :editor_button) do
@@ -86,6 +87,12 @@ class EditorWindow < GameWindow
       Label.new(x: 10, y: 710, font: @font, text: 'Destination'),
       (@txt_dest_scr = TextField.new(x: 10, y: 725, font: @font, img: :editor_textFieldShort, margin_x: 5, margin_y: 2)),
       (@txt_dest_ent = TextField.new(x: 63, y: 725, font: @font, img: :editor_textFieldShort, margin_x: 5, margin_y: 2)),
+      DropDownList.new(x: 330, y: 370, font: @font, img: :editor_dropDown, opt_img: :editor_ddButton, text_margin: 5,
+                       options: [''].concat(object_names)) do |old_value, new_value|
+        @cur_obj = new_value.empty? ? nil : [:object, object_names.index(new_value)]
+        @txt_args.text = '' if old_value != new_value
+      end,
+      (@txt_args = TextField.new(x: 330, y: 390, font: @font, img: :editor_textField, margin_x: 5, margin_y: 2))
     ]
 
     tileset = Gosu::Image.new("#{Res.prefix}tileset/1.png")
@@ -157,6 +164,8 @@ class EditorWindow < GameWindow
         if pressed && !@txt_dest_scr.text.empty? && !@txt_dest_ent.text.empty?
           @screen.add_exit(i, j, @txt_dest_scr.text.to_i, @txt_dest_ent.text.to_i)
         end
+      when :object
+        @screen.add_object(i, j, @cur_obj[1], @txt_args.text) if pressed
       end
     elsif Mouse.button_released?(:left)
       if cur_obj_type == :obstacle
@@ -175,8 +184,17 @@ class EditorWindow < GameWindow
         @screen.delete_entrance(i, j)
       when :exit
         @screen.delete_exit(i, j)
+      when :object
+        @screen.delete_object(i, j)
       end
     end
+  end
+
+  def draw_outline(x, y, width, height, color, z_index)
+    draw_line(x, y, color, x + width, y, color, z_index)
+    draw_line(x, y + height - 1, color, x + width, y + height - 1, color, z_index)
+    draw_line(x + 1, y + 1, color, x + 1, y + height - 1, color, z_index)
+    draw_line(x + width, y + 1, color, x + width, y + height - 1, color, z_index)
   end
 
   def draw

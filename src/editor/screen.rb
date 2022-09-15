@@ -55,6 +55,7 @@ class EditorScreen < Screen
     end
     entrances_f = @entrances_f.map { |e| "#{e.col},#{e.row}" }
     exits_f = @exits_f.map { |e| "#{e.col},#{e.row},#{e.dest_scr},#{e.dest_ent}" }
+    objects_f = @objects_f.map { |o| "#{o.type_id},#{o.x / TILE_SIZE},#{o.y / TILE_SIZE}#{o.args ? ":#{o.args}" : ''}" }
 
     i = j = count = 0
     last_tiles = nil
@@ -87,16 +88,19 @@ class EditorScreen < Screen
     end
     entrances_t = @entrances_t.map { |e| "#{e.col},#{e.row}" }
     exits_t = @exits_t.map { |e| "#{e.col},#{e.row},#{e.dest_scr},#{e.dest_ent}" }
+    objects_t = @objects_t.map { |o| "#{o.type_id},#{o.x / TILE_SIZE},#{o.y / TILE_SIZE}#{o.args ? ":#{o.args}" : ''}" }
 
     [
       tiles_f.join(';'),
       obstacles_f.join(';'),
       entrances_f.join(';'),
       exits_f.join(';'),
+      objects_f.join(';'),
       tiles_t.join(';'),
       obstacles_t.join(';'),
       entrances_t.join(';'),
       exits_t.join(';'),
+      objects_t.join(';')
     ].join('|')
   end
 
@@ -174,12 +178,23 @@ class EditorScreen < Screen
     list
   end
 
+  def add_object(i, j, type, args)
+    list = delete_object(i, j)
+    list << OBJECT_TYPES[type].new(i * TILE_SIZE, j * TILE_SIZE, args.empty? ? nil : args, @front)
+  end
+
+  def delete_object(i, j)
+    list = @front ? @objects_f : @objects_t
+    list.delete_if { |o| o.x / TILE_SIZE == i && o.y / TILE_SIZE == j }
+    list
+  end
+
   def draw(depth)
     super()
 
     (0...TILE_X_COUNT).each do |i|
       (0...TILE_Y_COUNT).each do |j|
-        G.window.draw_rect(i * TILE_SIZE + 1, j * TILE_SIZE + 1, TILE_SIZE - 2, TILE_SIZE - 2, 0x80ffffff, 100)
+        G.window.draw_outline(i * TILE_SIZE, j * TILE_SIZE, TILE_SIZE, TILE_SIZE, 0x66000000, 100)
       end
     end
 
