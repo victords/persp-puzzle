@@ -58,6 +58,7 @@ class Screen
   BLOCKER_T2 = 50
   OBJECT_TYPES = [
     Switch,
+    Door,
   ].freeze
 
   def initialize(name, entrance_index = 0)
@@ -230,7 +231,7 @@ class Screen
 
     objects_list.each { |o| o.update(@man) }
 
-    toggle_view if KB.key_pressed?(Gosu::KB_SPACE)
+    toggle_view if KB.key_pressed?(Gosu::KB_LEFT_SHIFT)
   end
 
   def draw

@@ -89,7 +89,7 @@ class Man < GameObject
         forces.x += FRICTION
       end
       if @bottom
-        forces.y -= JUMP_FORCE if KB.key_pressed?(Gosu::KB_UP)
+        forces.y -= JUMP_FORCE if KB.key_pressed?(Gosu::KB_SPACE)
       end
 
       prev_bottom = @bottom
