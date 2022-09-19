@@ -54,6 +54,7 @@ end
 
 class Screen
   TOGGLE_RATE = Math::PI / 60
+  TRANSITION_RATE = 10
   BLOCKER_T1 = 10
   BLOCKER_T2 = 50
   OBJECT_TYPES = [
@@ -61,7 +62,7 @@ class Screen
     Door,
   ].freeze
 
-  def initialize(name, entrance_index = 0)
+  def initialize(name, entrance_index = 0, from_transition = false)
     @bg = Res.img(:bg_1)
 
     @tileset = Res.tileset('1', TILE_SIZE, TILE_SIZE)
@@ -81,6 +82,7 @@ class Screen
     @front = true
     @scale_y = 1
     @max_depth = 0
+    @overlay_alpha = from_transition ? 255 : 0
     return unless name
 
     File.open("#{Res.prefix}screen/#{name}.txt") do |f|
@@ -191,8 +193,21 @@ class Screen
     nil
   end
 
+  def transition(&callback)
+    @overlay_alpha = 0
+    @transition_callback = callback
+  end
+
   def update
-    if @toggling
+    if @transition_callback
+      @overlay_alpha += TRANSITION_RATE
+      @overlay_alpha = 255 if @overlay_alpha > 255
+      if @overlay_alpha == 255
+        @transition_callback.call
+        @transition_callback = nil
+      end
+      return
+    elsif @toggling
       @angle += TOGGLE_RATE
       if @angle >= Math::PI / 2
         if @toggling == 1
@@ -222,10 +237,15 @@ class Screen
       return
     end
 
+    if @overlay_alpha > 0
+      @overlay_alpha -= TRANSITION_RATE
+      return if @overlay_alpha >= 127
+    end
+
     @man.update(self)
     ex_list = @front ? @exits_f : @exits_t
     if (ex = ex_list.find { |e| e.bounds.intersect?(@man.bounds) })
-      Game.go_to(ex.dest_scr, ex.dest_ent)
+      transition { Game.go_to(ex.dest_scr, ex.dest_ent) }
       return
     end
 
@@ -260,6 +280,10 @@ class Screen
       a = @timer >= BLOCKER_T1 ? 1 - ((@timer - BLOCKER_T1).to_f / BLOCKER_T2) : @timer.to_f / BLOCKER_T1
       alpha = (204 * a).round
       G.window.draw_rect(@blocker.x, @blocker.y, @blocker.w, @blocker.h, (alpha << 24) | 0xff0000, 100)
+    end
+
+    if @overlay_alpha > 0
+      G.window.draw_rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, @overlay_alpha << 24, 1000)
     end
   end
 

@@ -22,7 +22,7 @@ class Game
     end
 
     def go_to(screen, entrance)
-      @controller = Screen.new(screen, entrance)
+      @controller = Screen.new(screen, entrance, true)
     end
 
     def update
